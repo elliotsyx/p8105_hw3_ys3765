@@ -84,11 +84,41 @@ ggplot(ny_data, aes(x = response, y = data_value)) +
 
 
 #Problem 3
-```{r read the csv}
-nhanes_accel <- read_csv("data/nhanes_accel.csv")
-view(nhanes_accel)
+```{r read the csv and tidy and merge}
+pre_nhanes_accel <- read_csv("data/nhanes_accel.csv")%>%
+  janitor::clean_names()%>%
+  rename(id = seqn)
+view(pre_nhanes_accel)
 
-nhanes_covar <- read_csv("data/nhanes_covar.csv")
+nhanes_accel<-pre_nhanes_accel%>%
+  pivot_longer(min1:min1440,names_to = "table",values_to = "value")
+
+nhanes_covar <- read_csv("data/nhanes_covar.csv")%>%
+  janitor::clean_names()%>%
+  rename(id = x1,sex = x1_male, age = x3,BMI = x4,education = x1_less_than_high_school)%>%
+  na.omit()
+
+nhanes_covar$id<-as.numeric(nhanes_covar$id)
+nhanes_covar<-nhanes_covar[-1,]
 view(nhanes_covar)
+merge_data<-left_join(nhanes_covar,nhanes_accel,by = "id")
+pre_merge_data<-left_join(nhanes_covar,pre_nhanes_accel,by = "id")
 ```
 
+```{r filter the necessary participants}
+clean_data <- merge_data %>%
+  filter(age >= 21) %>%
+  mutate(sex = factor(sex, levels = c("1", "2"), ordered = TRUE),
+         education = factor(education, levels = c("1", "2", "3"),ordered = TRUE))
+
+```
+
+```{r create a table}
+education_gender_table <- pre_merge_data %>%
+  group_by(education, sex) %>%
+  tally()
+
+print(education_gender_table)
+
+
+```
