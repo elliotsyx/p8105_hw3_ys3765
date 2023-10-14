@@ -4,14 +4,12 @@ author: "Yixiao Sun"
 date: "2023-10-09"
 output: github_document
 ---
-#Problem 1
+#Load packages
 ```{r}
 library(tidyverse)
 library(p8105.datasets)
 library(ggplot2)
-data("instacart")
 ```
-
 
 #Problem 2
 
@@ -50,20 +48,25 @@ states_2010 <- df1_grouped_ordered %>%
 
 print(states_2010)
 ```
+For year 2022, these following `r nrow(states_2002)` states were observed at 7 or more locations:`r states_2002$locationabbr`.
+
+For year 2010, these following `r nrow(states_2010)` states were observed at 7 or more locations:`r states_2010$locationabbr`.
+
+For this graph, the plot shows in each state the line pattern of people giving excellent response from year 2002 to year 2010.
 ```{r construct}
 excellent<-df1_grouped_ordered%>%
   filter(response == "Excellent")%>%
   group_by(year,locationabbr)%>%
-  summarise(average = mean(data_value,.groups='drop'))
+  summarise(average = mean(data_value),.groups='drop')
 
 ggplot(excellent, aes(x = year, y = average, group = locationabbr, color = locationabbr)) +
   geom_line() +
   labs(title = "Average Value of 'Excellent' Responses Over Time", 
        x = "Year", 
-       y = "Average Value") +
-  theme_minimal() 
+       y = "Average Value")
 ```
 
+This following plot is used to compare the data value in NY between year 2006 and year 2010 in different response group(From "Poor" to "Excellent"). It can be seen from the plot that though other classes responses didn't make much differences, the overall values of the response "Very good" in 2010 is higher than that of 2006.
 ```{r two_panel plot}
 ny_data <- df1_grouped_ordered %>%
   filter(year %in% c(2006, 2010), locationabbr == "NY")
@@ -110,16 +113,20 @@ clean_data <- merge_data %>%
                             ordered = TRUE))
 
 ```
+This is the first step, to import, clean, and combine the `nhanes_accel` and `nhanes_covar` datasets. I used the `pivot_longer` function to tidy the `nhanes_accel` dataset so it can be more clear for us to see more values. And using `mutate` ,`recode`, and `factor` function to set levels for the variables "Education Level" and "Sex". And the final merged dataset,after exclude the participants less than 21 years of age and those who has missing values, the `clean_data` has in total `r nrow(clean_data)` rows and `r ncol(clean_data)` columns.
 
+
+
+
+This following table is to show the number of men and women in each education category. And with the following visualization of age distributions for men and women in each education category, we can see that for "Less than High School" and "More than High School" groups of education level, the age differences are subtle between men and women. However, for the education level of "High School Equivalent", the overall age for man to attend High School is younger than that of woman.
 
 ```{r create a table}
 education_gender_table <- clean_data %>%
   group_by(education, sex) %>%
-  summarize(n_obs = n())
+  summarize(n_obs = n(),.groups = "drop")
 
 print(education_gender_table)
-```
-```{r Visualization of the age distribution for men and women in each education categoru}
+
 clean_data_plot = 
   clean_data %>%
   ggplot(aes(x = education, y = age, color =sex)) +
@@ -128,23 +135,27 @@ clean_data_plot =
 clean_data_plot
 ```
 
-
+This following graph shows the activities differences between men and women of tatal activities in a 24-hour period in different education level across ages. All of these trend lines shows that as the age of person. increases, no matter which gender she or he is, after reaching a maximum point, would continue to decrease. And for the three education levels, male who is at "Less than High School" education level has a overall higher trend line than that of female. However, for the rest of two education levels, female shows higher daily activities value than male even though the age continues to grow.
 
 ```{r total activity plot}
 total<- clean_data%>%
         group_by(clean_data$seqn)%>%
-        mutate(total = sum(value))
+        mutate(total = sum(value))%>%
+        filter(table == "min1")
 
 ggplot(total,aes(x = age, y = total,color = sex))+
   geom_point()+
-  geom_smooth()+
-  facet_wrap(~education)+
+  geom_smooth(se = TRUE)+
+  facet_grid(~education)+
   labs(title = "Total Activity vs Age by Education and Gender")
               
 ```
 
-```{r}
-ggplot(clean_data, aes(x = table, y = value,color = sex))+
+This following plot shows the activities differences between men and women for one day particular in a 24-hour period in different education level across ages. From the first two education level, "Less than High School", and "High School Equivalent", the overall trend line and table points shows nearly no difference. For the level "More than High School", the activities of both male and female in around min500 and min1250 are strongly high, especially for male in min1250(around 8 o'clock in the evening). 
+
+```{r 24_hour activities}
+clean_data_final<-clean_data%>% mutate(table = as.numeric(str_replace_all(table,"min","")))
+ggplot(clean_data_final, aes(x = table, y = value,color = sex))+
   geom_point(alpha = 0.5)+
   geom_smooth()+
   facet_wrap(~education)+
