@@ -74,8 +74,7 @@ ggplot(ny_data, aes(x = response, y = data_value)) +
   facet_grid(~year) +
   labs(title = "Distribution of Data Value in NY for 2006 and 2010", 
        x = "Response", 
-       y = "Data Value") +
-  theme_minimal()
+       y = "Data Value")
 
 
 ```
@@ -87,7 +86,6 @@ ggplot(ny_data, aes(x = response, y = data_value)) +
 ```{r read the csv and tidy and merge}
 nhanes_accel <- read_csv("data/nhanes_accel.csv")%>%
   janitor::clean_names()%>%
-  #rename(id = seqn)%>%
   pivot_longer(min1:min1440,names_to = "table",values_to = "value")
 
 nhanes_covar <- read_csv("data/nhanes_covar.csv", skip = 4) %>%
@@ -121,7 +119,7 @@ education_gender_table <- clean_data %>%
 
 print(education_gender_table)
 ```
-```{r}
+```{r Visualization of the age distribution for men and women in each education categoru}
 clean_data_plot = 
   clean_data %>%
   ggplot(aes(x = education, y = age, color =sex)) +
@@ -131,4 +129,25 @@ clean_data_plot
 ```
 
 
+
+```{r total activity plot}
+total<- clean_data%>%
+        group_by(clean_data$seqn)%>%
+        mutate(total = sum(value))
+
+ggplot(total,aes(x = age, y = total,color = sex))+
+  geom_point()+
+  geom_smooth()+
+  facet_wrap(~education)+
+  labs(title = "Total Activity vs Age by Education and Gender")
+              
+```
+
+```{r}
+ggplot(clean_data, aes(x = table, y = value,color = sex))+
+  geom_point(alpha = 0.5)+
+  geom_smooth()+
+  facet_wrap(~education)+
+  labs(title = "Activity time over 24-Hours by Education and Gender")
+```
 
