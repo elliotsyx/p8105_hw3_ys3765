@@ -121,11 +121,14 @@ This is the first step, to import, clean, and combine the `nhanes_accel` and `nh
 This following table is to show the number of men and women in each education category. And with the following visualization of age distributions for men and women in each education category, we can see that for "Less than High School" and "More than High School" groups of education level, the age differences are subtle between men and women. However, for the education level of "High School Equivalent", the overall age for man to attend High School is younger than that of woman.
 
 ```{r create a table}
-education_gender_table <- clean_data %>%
+education_gender_table <- nhanes_covar %>%
+  filter(age >= 21) %>%
   group_by(education, sex) %>%
-  summarize(n_obs = n(),.groups = "drop")
+  tally()%>%
+  pivot_wider(names_from = sex, values_from = n)%>%
+  knitr::kable(caption = "The Summary of the number of Male and Female in the Three Education Level")
 
-print(education_gender_table)
+education_gender_table
 
 clean_data_plot = 
   clean_data %>%
